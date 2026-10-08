@@ -174,3 +174,4 @@ dialog#sheet{max-height:100dvh}
 @media (prefers-color-scheme: dark){.status{background:#2F6CA6}}
 .status.show{transform:translate(-50%,0)}
 .status small{font-weight:400;opacity:.8;margin-left:4px}
+.warn-txt{color:var(--warn)}

@@ -1,9 +1,10 @@
 /* ========= CONFIGURACIÓN =========
- * API_URL : URL de la aplicación web de Apps Script (termina en /exec)
+ * API_URL : URL del Worker de Cloudflare (https://limpiezas-api.TU-SUBDOMINIO.workers.dev)
+ *           (o, sin Worker, la URL /exec de Apps Script: funciona igual pero más lento)
  * La clave va en el enlace que compartes:  https://…github.io/…/#k=TU_CLAVE
  * Vista de prueba sin datos reales : añade ?demo al final del enlace
  */
-const API_URL = 'https://script.google.com/macros/s/AKfycbxYrwbLOvNmZOn2UWrMDdBqj8H1bldweHUSn9VYlyBIA_YL1kOlasA7Z5OvaiA0MzF5/exec';
+const API_URL = 'https://limpiezas-api.quiniouthomas-pro.workers.dev/';
 /* ================================= */
 
 const $ = s => document.querySelector(s);
@@ -33,6 +34,7 @@ const ERRORS = {
   ya_pagada: 'Esta limpieza ya está pagada, no se puede deshacer.',
   texto_vacio: 'Escribe lo que hace falta comprar.',
   lista_llena: 'La lista está llena, avisa a Tom.',
+  piso_desconocido: 'Piso desconocido, recarga la página.',
 };
 
 function key() { return new URLSearchParams(location.hash.slice(1)).get('k') || ''; }
@@ -47,7 +49,24 @@ function prep(j) {
   return j;
 }
 const clone = j => prep(JSON.parse(JSON.stringify(j, (k, v) => (k === 'd' ? undefined : v))));
-function setBase(j) { BASE = prep(j); }
+function setBase(j, fromServer = true) {
+  if (fromServer && j.warnings && j.warnings.length) {
+    setTimeout(() => toast(j.warnings.map(w => w.msg).join(' '), true), 300);
+  }
+  delete j.warnings;
+  BASE = prep(j);
+  if (fromServer && !isDemo) saveLocal(j);
+}
+
+// Copia local en el móvil: la página se muestra al instante y luego se actualiza en segundo plano
+const LS_KEY = 'limpiezas_cache_v1';
+function saveLocal(j) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(j, (k, v) => (k === 'd' ? undefined : v))); } catch (e) {}
+}
+function readLocal() {
+  try { const t = localStorage.getItem(LS_KEY); return t ? JSON.parse(t) : null; } catch (e) { return null; }
+}
+let refreshing = false;
 
 // Vista = datos del servidor + acciones en curso (se ven al instante, en gris, hasta que Google confirma)
 function recompute() {
@@ -93,25 +112,47 @@ window.addEventListener('beforeunload', e => { if (queue.length) { e.preventDefa
 const todayStr = () => { const t = today; return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; };
 
 async function load() {
-  const btn = $('#refresh'); btn.classList.add('spin');
+  const btn = $('#refresh');
+  if (queue.length || refreshing) return;          // no pisar acciones en curso
+  refreshing = true; btn.classList.add('spin');
+  // 1) mostrar al instante lo último que se vio en este móvil
+  if (!BASE && !isDemo && key()) {
+    const local = readLocal();
+    if (local) { setBase(local, false); recompute(); }
+  }
+  if (BASE) setUpdated(true);
+  // 2) pedir los datos frescos
   try {
-    if (queue.length) return;                 // no pisar acciones en curso
-    if (isDemo) { if (!BASE) setBase(demo()); }
-    else {
+    if (isDemo) {
+      if (!BASE) setBase(demo(), false);
+      else await new Promise(r => setTimeout(r, 1200));
+    } else {
       if (!key()) throw new Error('unauthorized');
       const r = await fetch(`${API_URL}?k=${encodeURIComponent(key())}&t=${Date.now()}`);
       const j = await r.json();
       if (j.error) throw new Error(j.error);
-      if (queue.length) return;
-      setBase(j);
+      if (!queue.length) setBase(j);
     }
+    refreshing = false;
     recompute();
   } catch (e) {
     const nokey = e.message === 'unauthorized';
-    $('#app').innerHTML = `<div class="card msg"><h3>${nokey ? 'Enlace incompleto' : 'No se pudieron cargar los datos'}</h3>
-      <div class="sub">${nokey ? 'Pide a Tom el enlace completo.' : 'Comprueba la conexión y pulsa ⟳ para reintentar.'}</div></div>`;
-    $('#updated').textContent = '';
-  } finally { btn.classList.remove('spin'); }
+    if (BASE && !nokey) {
+      $('#updated').innerHTML = `<span class="warn-txt">Sin conexión · datos de ${esc(fmtUpdated(BASE.updated))}</span>`;
+    } else {
+      $('#app').innerHTML = `<div class="card msg"><h3>${nokey ? 'Enlace incompleto' : 'No se pudieron cargar los datos'}</h3>
+        <div class="sub">${nokey ? 'Pide a Tom el enlace completo.' : 'Comprueba la conexión y pulsa ⟳ para reintentar.'}</div></div>`;
+      $('#updated').textContent = '';
+    }
+  } finally { refreshing = false; btn.classList.remove('spin'); }
+}
+
+const fmtUpdated = iso => { const u = new Date(iso);
+  return `${u.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} a las ${u.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`; };
+function setUpdated(loading) {
+  $('#updated').innerHTML = loading
+    ? `<span class="spinner sm"></span>Actualizando…`
+    : `Actualizado ${esc(fmtUpdated(DATA.updated))}`;
 }
 
 async function api(action, payload) {
@@ -183,8 +224,7 @@ function render() {
   const paid = rows.filter(r => r.hecho && r.pagado).sort((a, b) => b.d - a.d);
   const next = upcoming[0];
 
-  const u = new Date(DATA.updated);
-  $('#updated').textContent = `Actualizado ${u.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} a las ${u.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+  setUpdated(refreshing);
 
   let h = '';
 
