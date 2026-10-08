@@ -191,7 +191,8 @@ function render() {
 
 function row(r, right, sub, showStars) {
   const stars = showStars && r.estrellas
-    ? `<button class="stars-mini" data-act="mark" data-row="${r.row}" aria-label="Ver valoración">${starsTxt(r.estrellas)}${r.comentario ? ' 💬' : ''}</button>`
+    ? `<button class="stars-mini" data-act="mark" data-row="${r.row}" aria-label="Modificar valoración e incidencias">
+         <span class="st">${starsTxt(r.estrellas)}</span>${r.comentario ? '<span class="has-c">💬</span>' : ''}<span class="edit">✎ Modificar</span></button>`
     : '';
   return `<div class="row"><span class="dot ${esc(r.piso)}"></span>
     <div class="main"><div class="when">${esc(cap(fmtShort(r.d)))}</div>
@@ -214,8 +215,10 @@ function openSheet(r) {
       <div class="stars" role="radiogroup" aria-label="Estrellas">
         ${[1, 2, 3, 4, 5].map(n => `<button type="button" role="radio" data-s="${n}" aria-label="${n} estrella${n > 1 ? 's' : ''}">★</button>`).join('')}
       </div>
-      <div class="q">Comentario <span class="opt">opcional</span></div>
-      <textarea rows="3" maxlength="500" placeholder="Algo roto, falta algo, muy sucio…">${esc(r.comentario || '')}</textarea>
+      <div class="q">Incidencias de esta estancia <span class="opt">opcional</span></div>
+      <div class="hint">Solo lo que ha pasado <b>con estos huéspedes</b>: algo <b>roto</b>, <b>manchado</b> o que <b>ha desaparecido</b> y antes estaba.</div>
+      <div class="hint alt">¿Hace falta comprar algo (café, papel, jabón…)? Eso va en la <button type="button" class="linkish" data-goshop>Lista de compras</button>, no aquí.</div>
+      <textarea rows="3" maxlength="500" placeholder="Ej.: vaso roto, falta una toalla, mancha en el sofá…">${esc(r.comentario || '')}</textarea>
       <button class="btn primary big" type="submit" data-ok disabled>${label}</button>
       ${r.hecho && !r.pagado ? `<button class="btn link" type="button" data-undo>Deshacer «hecha»</button>` : ''}
       <button class="btn link" type="button" data-close>Cancelar</button>
@@ -229,6 +232,12 @@ function openSheet(r) {
   };
   dlg.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { stars = +b.dataset.s; paint(); });
   dlg.querySelector('[data-close]').onclick = () => dlg.close();
+  dlg.onclick = e => { if (e.target === dlg) dlg.close(); };   // clic fuera = Cancelar
+  dlg.querySelector('[data-goshop]').onclick = () => {
+    dlg.close();
+    const f = document.querySelector(`form.add[data-piso="${CSS.escape(r.piso)}"]`) || document.querySelector('form.add');
+    if (f) { f.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => f.querySelector('input').focus(), 400); }
+  };
   const undo = dlg.querySelector('[data-undo]');
   if (undo) undo.onclick = async () => {
     if (!confirm('¿Seguro que quieres desmarcar esta limpieza?')) return;
