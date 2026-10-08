@@ -54,7 +54,8 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--mute
   display:flex;justify-content:space-between}
 h2 .count{font-variant-numeric:tabular-nums}
 .list{overflow:hidden}
-.row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-top:1px solid var(--line)}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding:13px 16px;border-top:1px solid var(--line)}
+.row-foot{flex-basis:100%;padding-left:22px}
 .row:first-child{border-top:none}
 .dot{flex:none;width:10px;height:10px;border-radius:50%}
 .dot.Fenals{background:var(--fenals)} .dot.Caprabo{background:var(--caprabo)}
@@ -99,7 +100,7 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin-top:18px}
 .btn.link{background:none;border:none;color:var(--muted);width:100%;margin-top:6px;font-weight:500}
 body.busy{cursor:progress}
 .todo{border-color:var(--brand)}
-.stars-mini{display:inline-flex;align-items:center;gap:6px;margin-top:5px;border:1px solid var(--line);background:var(--bg);
+.stars-mini{display:inline-flex;align-items:center;gap:6px;margin-top:2px;border:1px solid var(--line);background:var(--bg);
   border-radius:999px;padding:3px 10px 3px 8px;font:inherit;cursor:pointer;color:var(--ink)}
 .stars-mini{white-space:nowrap}
 .row .right{max-width:46%}
@@ -167,7 +168,7 @@ dialog#sheet{max-height:100dvh}
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;
   animation:spin .7s linear infinite;vertical-align:-2px;margin-right:8px}
 .spinner.sm{width:10px;height:10px;border-width:1.5px;margin-right:5px;vertical-align:-1px}
-.status{position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-80px);transition:transform .25s;
+.status{position:fixed !important;top:calc(10px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-80px);transition:transform .25s;
   background:var(--brand);color:#fff;padding:9px 16px;border-radius:999px;font-size:14px;font-weight:600;z-index:20;
   box-shadow:0 6px 20px rgba(0,0,0,.18);white-space:nowrap}
 @media (prefers-color-scheme: dark){.status{background:#2F6CA6}}

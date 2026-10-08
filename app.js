@@ -281,8 +281,9 @@ function row(r, right, sub, showStars) {
   if (r.pending) right = `<span class="badge saving"><span class="spinner sm"></span>Guardando…</span>`;
   return `<div class="row${r.pending ? ' pending' : ''}"><span class="dot ${esc(r.piso)}"></span>
     <div class="main"><div class="when">${esc(cap(fmtShort(r.d)))}</div>
-      <div class="where">${esc(r.piso)}${sub ? ' · ' + esc(sub) : ''}</div>${r.pending ? '' : stars}</div>
-    <div class="right">${right}</div></div>`;
+      <div class="where">${esc(r.piso)}${sub ? ' · ' + esc(sub) : ''}</div></div>
+    <div class="right">${right}</div>
+    ${r.pending || !stars ? '' : `<div class="row-foot">${stars}</div>`}</div>`;
 }
 
 /* ---------- Ventana "Marcar hecha / Valorar" ---------- */
