@@ -5,7 +5,6 @@
  */
 const API_URL = 'https://script.google.com/macros/s/AKfycbxYrwbLOvNmZOn2UWrMDdBqj8H1bldweHUSn9VYlyBIA_YL1kOlasA7Z5OvaiA0MzF5/exec';
 /* ================================= */
-
 const $ = s => document.querySelector(s);
 const eur = n => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0);
 const parseD = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
